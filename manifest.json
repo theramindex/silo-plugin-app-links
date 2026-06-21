@@ -1,0 +1,87 @@
+{
+  "plugin_id": "silo.ramindex.app-links",
+  "version": "0.1.0",
+  "checksum": "__CHECKSUM__",
+  "silo_api_version": "v1",
+  "supported_platforms": [
+    {
+      "os": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "arm64"
+    }
+  ],
+  "capabilities": [
+    {
+      "type": "http_routes.v1",
+      "id": "app-links-routes",
+      "display_name": "App Links Routes",
+      "description": "Serves external app links, embedded iframe shells, and the admin manager."
+    }
+  ],
+  "http_routes": [
+    {
+      "id": "app-links-app",
+      "method": "GET",
+      "path": "/app-links",
+      "access": "authenticated",
+      "navigable": true,
+      "navigation_label": "Apps",
+      "navigation_kind": "user"
+    },
+    {
+      "id": "app-links-open",
+      "method": "GET",
+      "path": "/app-links/open",
+      "access": "authenticated",
+      "navigable": false
+    },
+    {
+      "id": "app-links-api-links",
+      "method": "GET",
+      "path": "/app-links/api/links",
+      "access": "authenticated",
+      "navigable": false
+    },
+    {
+      "id": "app-links-admin",
+      "method": "GET",
+      "path": "/app-links/admin",
+      "access": "admin",
+      "navigable": true,
+      "navigation_label": "App Links",
+      "navigation_kind": "admin"
+    },
+    {
+      "id": "app-links-admin-api-links",
+      "method": "GET",
+      "path": "/app-links/admin/api/links",
+      "access": "admin",
+      "navigable": false
+    },
+    {
+      "id": "app-links-admin-api-links-save",
+      "method": "POST",
+      "path": "/app-links/admin/api/links",
+      "access": "admin",
+      "navigable": false
+    },
+    {
+      "id": "app-links-admin-api-link-delete",
+      "method": "POST",
+      "path": "/app-links/admin/api/delete",
+      "access": "admin",
+      "navigable": false
+    }
+  ],
+  "metadata": {
+    "display_name": "App Links",
+    "summary": "Adds a Silo Apps launcher with optional fullscreen iframe shells for external services."
+  }
+}
