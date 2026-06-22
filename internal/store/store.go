@@ -177,7 +177,7 @@ func Normalize(link Link) (Link, error) {
 		}
 	}
 	if link.OpenMode == "" {
-		link.OpenMode = "iframe"
+		link.OpenMode = "new_tab"
 	}
 	if link.OpenMode != "iframe" && link.OpenMode != "new_tab" {
 		return Link{}, errors.New("open mode must be iframe or new_tab")

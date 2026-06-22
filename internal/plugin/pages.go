@@ -136,7 +136,7 @@ func adminPageHTML(dataPath string) string {
         <label>Description<textarea id="description"></textarea></label>
         <label>Category<input id="category" placeholder="Media, Admin, Requests"></label>
         <label>Icon URL<input id="iconUrl" placeholder="https://app.example.com/icon.png"></label>
-        <label>Open mode<select id="openMode"><option value="iframe">Fullscreen iframe</option><option value="new_tab">New tab</option></select></label>
+        <label>Open mode<select id="openMode"><option value="new_tab" selected>New tab</option><option value="iframe">Fullscreen iframe</option></select></label>
         <label>Sort order<input id="sortOrder" type="number" value="0"></label>
         <label class="check"><input id="enabled" type="checkbox" checked> Enabled</label>
         <div class="actions"><button class="primary" type="submit">Save link</button><button id="delete" class="danger" type="button">Delete</button></div>
@@ -150,7 +150,7 @@ func adminPageHTML(dataPath string) string {
     const ids = ["name","url","description","category","iconUrl","openMode","sortOrder","enabled"];
     const el = id => document.getElementById(id);
     const esc = value => String(value || "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" })[ch]);
-    function reset() { current = null; ids.forEach(id => { if (id === "enabled") el(id).checked = true; else if (id === "openMode") el(id).value = "iframe"; else if (id === "sortOrder") el(id).value = "0"; else el(id).value = ""; }); }
+    function reset() { current = null; ids.forEach(id => { if (id === "enabled") el(id).checked = true; else if (id === "openMode") el(id).value = "new_tab"; else if (id === "sortOrder") el(id).value = "0"; else el(id).value = ""; }); }
     function edit(link) { current = link; ids.forEach(id => { if (id === "enabled") el(id).checked = !!link.enabled; else el(id).value = link[id] || (id === "openMode" ? "iframe" : ""); }); }
     function render() { el("list").innerHTML = links.length ? links.map(link => "<button class='row' data-id='" + esc(link.id) + "'><span><strong>" + esc(link.name) + "</strong><small>" + esc(link.url) + "</small></span><small>" + esc(link.enabled ? link.openMode : "disabled") + "</small></button>").join("") : "<div class='muted'>No links yet.</div>"; document.querySelectorAll("[data-id]").forEach(row => row.onclick = () => edit(links.find(link => link.id === row.dataset.id))); }
     async function load() { const response = await fetch(route("/app-links/admin/api/links"), { credentials:"include" }); const data = await response.json(); links = data.links || []; render(); }
