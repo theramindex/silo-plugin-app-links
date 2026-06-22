@@ -13,7 +13,7 @@ func TestNormalizeDefaultsIDAndOpenMode(t *testing.T) {
 	if link.ID != "plex-server" {
 		t.Fatalf("ID = %q", link.ID)
 	}
-	if link.OpenMode != "iframe" {
+	if link.OpenMode != "new_tab" {
 		t.Fatalf("OpenMode = %q", link.OpenMode)
 	}
 }

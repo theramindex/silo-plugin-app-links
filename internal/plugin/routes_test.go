@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	pluginv1 "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginproto/silo/plugin/v1"
@@ -67,5 +68,15 @@ func TestHandleSaveLink(t *testing.T) {
 	}
 	if len(store.links) != 1 || store.links[0].ID != "plex" {
 		t.Fatalf("links = %#v", store.links)
+	}
+	if store.links[0].OpenMode != "new_tab" {
+		t.Fatalf("open mode = %q, want new_tab", store.links[0].OpenMode)
+	}
+}
+
+func TestAdminPageDefaultsNewLinksToNewTab(t *testing.T) {
+	body := adminPageHTML("/tmp/app-links.json")
+	if !strings.Contains(body, `<option value="new_tab" selected>New tab</option>`) {
+		t.Fatalf("expected admin open mode selector to default to new tab")
 	}
 }
