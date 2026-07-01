@@ -80,3 +80,42 @@ func TestAdminPageDefaultsNewLinksToNewTab(t *testing.T) {
 		t.Fatalf("expected admin open mode selector to default to new tab")
 	}
 }
+
+func TestUserPageShowsOpenModeBadges(t *testing.T) {
+	body := userPageHTML()
+	if !strings.Contains(body, "mode-badge") || !strings.Contains(body, "targetAttr") {
+		t.Fatalf("expected user page to render launch-mode badges and new-tab targets")
+	}
+}
+
+func TestIframePageHasBlockedFrameFallback(t *testing.T) {
+	body := iframePageHTML(store.Link{Name: "Romm", URL: "https://romm.ramindex.org/"})
+	for _, want := range []string{
+		`id="frame-fallback"`,
+		`This app cannot be embedded here.`,
+		`frameLoadTimer`,
+		`Open externally`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected iframe page to contain %q", want)
+		}
+	}
+	if strings.Contains(body, "backdrop-filter") {
+		t.Fatalf("iframe page should not use glassmorphism backdrop-filter chrome")
+	}
+}
+
+func TestAdminPageHasInlineFeedbackAndSubmitGuard(t *testing.T) {
+	body := adminPageHTML("/tmp/app-links.json")
+	for _, want := range []string{
+		`id="form-status"`,
+		`setStatus("Saving link`,
+		`submit.disabled = true`,
+		`Unable to load links.`,
+		`Retry`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected admin page to contain %q", want)
+		}
+	}
+}
