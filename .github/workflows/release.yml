@@ -1,0 +1,26 @@
+name: Release
+
+# Actions tab -> Release -> Run workflow on main. Runs as the ramindex-ci GitHub App:
+# bumps manifest.json, verifies, commits, tags and pushes; the tag build then
+# publishes the release and updates the catalog. See RELEASING.md in
+# theramindex/silo-plugins.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without a leading v. Blank releases the next patch.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: theramindex/silo-plugins/.github/workflows/release-plugin.yml@main
+    with:
+      version: ${{ inputs.version }}
+      commit-message: Release App Links {version}
+      verify: go test ./...
+    secrets: inherit
