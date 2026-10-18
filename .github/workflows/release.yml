@@ -1,15 +1,19 @@
 name: Release
 
-# Actions tab -> Release -> Run workflow on main. Runs as the ramindex-ci GitHub App:
-# bumps manifest.json, verifies, commits, tags and pushes; the tag build then
-# publishes the release and updates the catalog. See RELEASING.md in
+# Runs on every push to main and from Actions tab -> Release -> Run workflow, as
+# the ramindex-ci GitHub App. Conventional Commits since the last tag pick the
+# version: feat is minor, fix/perf/revert patch, other types release nothing.
+# The release bumps manifest.json, verifies, commits, tags and pushes; the tag
+# build then publishes the release and updates the catalog. See RELEASING.md in
 # theramindex/silo-plugins.
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
-        description: Version without a leading v. Blank releases the next patch.
+        description: Version without a leading v. Blank picks it from the commits (at least a patch).
         required: false
         type: string
 
@@ -18,9 +22,15 @@ permissions:
 
 jobs:
   release:
+    # One release at a time; a newer push waits and then releases everything since the last tag.
+    concurrency:
+      group: release
+      cancel-in-progress: false
     uses: theramindex/silo-plugins/.github/workflows/release-plugin.yml@main
     with:
+      auto: ${{ github.event_name == 'push' }}
       version: ${{ inputs.version }}
-      commit-message: Release App Links {version}
+      commit-message: "chore(release): App Links {version}"
+      tag-message: App Links v{version}
       verify: go test ./...
     secrets: inherit
