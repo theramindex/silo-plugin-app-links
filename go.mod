@@ -2,7 +2,7 @@ module github.com/theramindex/silo-plugin-app-links
 
 go 1.26.0
 
-require github.com/Silo-Server/silo-plugin-sdk v0.30.0
+require github.com/Silo-Server/silo-plugin-sdk v0.32.1
 
 require (
 	github.com/fatih/color v1.13.0 // indirect
