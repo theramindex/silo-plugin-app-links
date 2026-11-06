@@ -246,13 +246,14 @@ func adminPageHTML(dataPath string) string {
     function clearFieldError() { ids.forEach(id => el(id).removeAttribute("aria-invalid")); }
     function showFieldError(field) { if (field && ids.includes(field)) { el(field).setAttribute("aria-invalid", "true"); el(field).focus(); } }
     function setStatus(message, tone) { const node = el("form-status"); node.textContent = message; node.className = "form-status" + (tone ? " " + tone : ""); }
-    function syncActions() { const submit = el("submit"); if (saving) submit.disabled = true; else submit.disabled = false; submit.textContent = saving ? "Saving..." : "Save link"; el("delete").disabled = deleting || !current; }
+    function syncActions() { const busy = saving || deleting; const submit = el("submit"); submit.disabled = busy; submit.textContent = saving ? "Saving..." : "Save link"; el("delete").disabled = busy || !current; el("new").disabled = busy; ids.forEach(id => el(id).disabled = busy); document.querySelectorAll("[data-id]").forEach(row => row.disabled = busy); }
     function reset(message) { clearFieldError(); current = null; ids.forEach(id => { if (id === "enabled") el(id).checked = true; else if (id === "openMode") el(id).value = "new_tab"; else if (id === "sortOrder") el(id).value = "0"; else el(id).value = ""; }); setStatus(message || "Ready to create a link.", message ? "ok" : ""); syncActions(); }
-    function edit(link) { clearFieldError(); current = link; ids.forEach(id => { if (id === "enabled") el(id).checked = !!link.enabled; else el(id).value = link[id] || (id === "openMode" ? "new_tab" : ""); }); setStatus("Editing " + link.name + "."); syncActions(); render(); }
+    function edit(link) { if (saving || deleting) return; clearFieldError(); current = link; ids.forEach(id => { if (id === "enabled") el(id).checked = !!link.enabled; else el(id).value = link[id] || (id === "openMode" ? "new_tab" : ""); }); setStatus("Editing " + link.name + "."); syncActions(); render(); }
     function statusLabel(link) { if (!link.enabled) return "Disabled"; return link.openMode === "iframe" ? "Embedded" : "New tab"; }
     function render() {
       el("list").innerHTML = links.length ? links.map(link => "<button class='row' type='button' data-id='" + esc(link.id) + "' aria-current='" + (current && current.id === link.id ? "true" : "false") + "'><span><strong>" + esc(link.name) + "</strong><small>" + esc(link.url) + "</small></span><span class='tag " + (link.enabled ? "on" : "") + "'>" + esc(statusLabel(link)) + "</span></button>").join("") : "<div class='state'>No links yet. Create the first one with the form.</div>";
       document.querySelectorAll("[data-id]").forEach(row => row.onclick = () => edit(links.find(link => link.id === row.dataset.id)));
+      syncActions();
     }
     async function load() {
       el("list").innerHTML = "<div class='state'>Loading links...</div>";
@@ -267,10 +268,10 @@ func adminPageHTML(dataPath string) string {
         el("retry-admin-load").onclick = load;
       }
     }
-    el("new").onclick = reset;
+    el("new").onclick = () => { if (!saving && !deleting) reset(); };
     el("form").onsubmit = async event => {
       event.preventDefault();
-      if (saving) return;
+      if (saving || deleting) return;
       saving = true; syncActions(); clearFieldError(); setStatus("Saving link...", "");
       const payload = { id: current && current.id || "", name: el("name").value, url: el("url").value, description: el("description").value, category: el("category").value, iconUrl: el("iconUrl").value, openMode: el("openMode").value, sortOrder: Number(el("sortOrder").value || 0), enabled: el("enabled").checked };
       try {
@@ -286,7 +287,7 @@ func adminPageHTML(dataPath string) string {
       }
     };
     el("delete").onclick = async () => {
-      if (!current || deleting || !confirm("Delete " + current.name + "?")) return;
+      if (!current || saving || deleting || !confirm("Delete " + current.name + "?")) return;
       deleting = true; syncActions(); setStatus("Deleting link...", "");
       try {
         const response = await fetch(route("/app-links/admin/api/delete"), { method:"POST", credentials:"include", headers:{ "content-type":"application/json" }, body:JSON.stringify({ id: current.id }) });

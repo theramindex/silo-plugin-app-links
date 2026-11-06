@@ -28,6 +28,12 @@ jobs:
           cache: true
       - name: Run tests
         run: go test ./...
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test admin state transitions
+        run: node --test scripts/*.test.mjs
 
   build:
     name: Build (${{ matrix.goos }}/${{ matrix.goarch }})

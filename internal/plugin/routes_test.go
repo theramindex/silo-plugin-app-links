@@ -105,12 +105,11 @@ func TestIframePageHasBlockedFrameFallback(t *testing.T) {
 	}
 }
 
-func TestAdminPageHasInlineFeedbackAndSubmitGuard(t *testing.T) {
+func TestAdminPageHasInlineFeedback(t *testing.T) {
 	body := adminPageHTML("/tmp/app-links.json")
 	for _, want := range []string{
 		`id="form-status"`,
 		`setStatus("Saving link`,
-		`submit.disabled = true`,
 		`Unable to load links.`,
 		`Retry`,
 	} {
