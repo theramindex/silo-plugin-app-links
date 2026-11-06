@@ -83,5 +83,17 @@
   "metadata": {
     "display_name": "App Links",
     "summary": "Adds a Silo Apps launcher with optional fullscreen iframe shells for external services."
+  },
+  "presentation": {
+    "display_name": "App Links",
+    "summary": "Adds an Apps page that launches the other services you run, in a new tab or inside Silo.",
+    "description_markdown": "Admins add links to external services from the App Links admin page. Users open them from Apps in a new tab, or embedded inside Silo with a toolbar for going back. Services that refuse to be embedded can still be opened in a new tab.",
+    "setup_markdown": "1. Open **App Links** in the admin navigation.\n2. Add a link with a name, URL, and open mode. **New tab** works with every service; **Inside Silo** works only with services that allow embedding.\n3. Users find the links under **Apps**.",
+    "homepage_url": "https://github.com/theramindex/silo-plugin-app-links",
+    "source_url": "https://github.com/theramindex/silo-plugin-app-links",
+    "support_url": "https://github.com/theramindex/silo-plugin-app-links/issues",
+    "changelog_url": "https://github.com/theramindex/silo-plugin-app-links/releases",
+    "publisher_name": "Ramindex",
+    "publisher_url": "https://github.com/theramindex"
   }
 }

@@ -119,3 +119,28 @@ func TestAdminPageHasInlineFeedbackAndSubmitGuard(t *testing.T) {
 		}
 	}
 }
+
+func TestSaveReturnsFieldForValidationError(t *testing.T) {
+	server := NewHTTPRoutesServer(&fakeStore{})
+	response, err := server.Handle(context.Background(), &pluginv1.HandleHTTPRequest{
+		Path:   "/app-links/admin/api/links",
+		Method: "POST",
+		Body:   []byte(`{"name":"Plex","url":"plex.example.com"}`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.GetStatusCode() != 400 || !strings.Contains(string(response.GetBody()), `"field":"url"`) {
+		t.Fatalf("status = %d body = %s", response.GetStatusCode(), response.GetBody())
+	}
+}
+
+func TestIframePageKeepsBarOutOfFrame(t *testing.T) {
+	body := iframePageHTML(store.Link{Name: "Romm", URL: "https://romm.example.com/"})
+	if strings.Contains(body, "inset-top") || strings.Contains(body, "inset:3.65rem") {
+		t.Fatalf("iframe must not be offset by a fixed bar height")
+	}
+	if !strings.Contains(body, `class="stage"`) || !strings.Contains(body, `id="silo-home"`) {
+		t.Fatalf("expected stage layout and base-path aware Silo button")
+	}
+}

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +28,27 @@ type Link struct {
 	Enabled     bool   `json:"enabled"`
 	SortOrder   int    `json:"sortOrder,omitempty"`
 	UpdatedAt   int64  `json:"updatedAt,omitempty"`
+}
+
+// ValidationError reports a problem with one form field. Field names match the
+// JSON keys of Link so the admin page can highlight the field.
+type ValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"error"`
+}
+
+func (e *ValidationError) Error() string {
+	return e.Message
+}
+
+// DuplicateError reports that a new link's name produces the ID of a link that
+// already exists, which would otherwise overwrite it.
+type DuplicateError struct {
+	Name string
+}
+
+func (e *DuplicateError) Error() string {
+	return fmt.Sprintf("A link named %q already exists. Edit that link or choose a different name.", e.Name)
 }
 
 type FileStore struct {
@@ -61,6 +84,7 @@ func (s *FileStore) Upsert(link Link) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
+	creating := strings.TrimSpace(link.ID) == ""
 	link, err = Normalize(link)
 	if err != nil {
 		return Link{}, err
@@ -69,6 +93,9 @@ func (s *FileStore) Upsert(link Link) (Link, error) {
 	replaced := false
 	for index := range links {
 		if links[index].ID == link.ID {
+			if creating {
+				return Link{}, &DuplicateError{Name: links[index].Name}
+			}
 			links[index] = link
 			replaced = true
 			break
@@ -159,44 +186,39 @@ func Normalize(link Link) (Link, error) {
 	link.Category = strings.TrimSpace(link.Category)
 	link.IconURL = strings.TrimSpace(link.IconURL)
 	link.OpenMode = strings.TrimSpace(link.OpenMode)
+	if link.Name == "" {
+		return Link{}, &ValidationError{Field: "name", Message: "Enter a name for the link."}
+	}
 	if link.ID == "" {
 		link.ID = slug(link.Name)
 	}
-	if link.Name == "" {
-		return Link{}, errors.New("name is required")
-	}
 	if link.ID == "" {
-		return Link{}, errors.New("id is required")
+		// Names without ASCII letters or digits (for example non-Latin
+		// scripts) produce an empty slug; derive a stable ID from the name.
+		sum := sha256.Sum256([]byte(link.Name))
+		link.ID = "link-" + hex.EncodeToString(sum[:6])
 	}
-	if err := validateURL(link.URL); err != nil {
-		return Link{}, fmt.Errorf("url: %w", err)
+	if !validURL(link.URL) {
+		return Link{}, &ValidationError{Field: "url", Message: "Enter a full URL starting with http:// or https://, for example https://app.example.com."}
 	}
-	if link.IconURL != "" {
-		if err := validateURL(link.IconURL); err != nil {
-			return Link{}, fmt.Errorf("icon url: %w", err)
-		}
+	if link.IconURL != "" && !validURL(link.IconURL) {
+		return Link{}, &ValidationError{Field: "iconUrl", Message: "Enter a full icon URL starting with http:// or https://, or leave it empty."}
 	}
 	if link.OpenMode == "" {
 		link.OpenMode = "new_tab"
 	}
 	if link.OpenMode != "iframe" && link.OpenMode != "new_tab" {
-		return Link{}, errors.New("open mode must be iframe or new_tab")
+		return Link{}, &ValidationError{Field: "openMode", Message: "Choose New tab or Inside Silo."}
 	}
 	return link, nil
 }
 
-func validateURL(value string) error {
+func validURL(value string) bool {
 	parsed, err := url.ParseRequestURI(value)
 	if err != nil {
-		return err
+		return false
 	}
-	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return errors.New("must be http or https")
-	}
-	if parsed.Host == "" {
-		return errors.New("host is required")
-	}
-	return nil
+	return (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != ""
 }
 
 func slug(value string) string {

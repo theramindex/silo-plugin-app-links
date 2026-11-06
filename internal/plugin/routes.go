@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"net/http"
 	"sort"
@@ -64,11 +65,11 @@ func (s *HTTPRoutesServer) handleList(includeDisabled bool) (*pluginv1.HandleHTT
 func (s *HTTPRoutesServer) handleSave(request *pluginv1.HandleHTTPRequest) (*pluginv1.HandleHTTPResponse, error) {
 	var link store.Link
 	if err := json.Unmarshal(request.GetBody(), &link); err != nil {
-		return jsonResponse(http.StatusBadRequest, map[string]any{"error": "invalid json"}), nil
+		return jsonResponse(http.StatusBadRequest, map[string]any{"error": "The link could not be read. Reload the page and try again."}), nil
 	}
 	saved, err := s.store.Upsert(link)
 	if err != nil {
-		return jsonResponse(http.StatusBadRequest, map[string]any{"error": err.Error()}), nil
+		return saveErrorResponse(err), nil
 	}
 	return jsonResponse(http.StatusOK, map[string]any{"link": saved}), nil
 }
@@ -100,7 +101,21 @@ func (s *HTTPRoutesServer) handleOpen(request *pluginv1.HandleHTTPRequest) (*plu
 			return htmlResponse(http.StatusOK, iframePageHTML(link)), nil
 		}
 	}
-	return textResponse(http.StatusNotFound, "app link not found"), nil
+	return htmlResponse(http.StatusNotFound, notFoundPageHTML()), nil
+}
+
+// saveErrorResponse maps store errors to messages an admin can act on. Field
+// errors name the form field so the page can highlight it.
+func saveErrorResponse(err error) *pluginv1.HandleHTTPResponse {
+	var validation *store.ValidationError
+	if errors.As(err, &validation) {
+		return jsonResponse(http.StatusBadRequest, map[string]any{"error": validation.Message, "field": validation.Field})
+	}
+	var duplicate *store.DuplicateError
+	if errors.As(err, &duplicate) {
+		return jsonResponse(http.StatusConflict, map[string]any{"error": duplicate.Error(), "field": "name"})
+	}
+	return jsonResponse(http.StatusInternalServerError, map[string]any{"error": "The link could not be saved: " + err.Error()})
 }
 
 func queryValue(request *pluginv1.HandleHTTPRequest, key string) string {
